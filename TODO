@@ -1,0 +1,10 @@
+MUST HAVE:
+*. Do CANCEL function: propagate cancel or accept. Timeout?
+*. Limit to N processes
+
+NICE TO HAVE:
+*. Add advanced schedule (cron) syntax (e.g. every 5 minutes)
+*. Is there a better way to launch the script?  other than exec(open(script.py)) ??
+
+FINALIZING
+*. Ensure logging (logger) calls use %s instead of {}

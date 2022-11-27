@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<registry>
+    <job name="testJob0"
+         script="C:\Users\Julian\PycharmProjects\scheduler\testing\task_success.py"
+         schedule="* * * * *">
+    </job>
+    <job name="testJob0b"
+         script="C:\Users\Julian\PycharmProjects\scheduler\testing\task_success.py"
+         schedule="35 * * * *">
+        <dependency name="testJob0"/>
+    </job>
+    <job name="testJob1"
+         script="C:\Users\Julian\PycharmProjects\scheduler\testing\task_success.py"
+         schedule="10 * * * *">
+    </job>
+    <job name="testJob2"
+         script="C:\Users\Julian\PycharmProjects\scheduler\testing\task_success.py"
+         schedule="30 * * * *">
+        <dependency name="testJob0"/>
+        <dependency name="testJob1"/>
+    </job>
+    <job name="testJob3"
+         script="C:\Users\Julian\PycharmProjects\scheduler\testing\task_success.py">
+        <dependency name="testJob0"/>
+        <dependency name="testJob1"/>
+    </job>
+        <job name="testJobMan"
+         script="C:\Users\Julian\PycharmProjects\scheduler\testing\task_success.py">
+    </job>
+</registry>

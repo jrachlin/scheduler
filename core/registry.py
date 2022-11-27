@@ -1,0 +1,57 @@
+import os
+import logging
+import xml.etree.ElementTree as ET
+
+from core.routine import Routine
+
+
+logger = logging.getLogger(__name__)
+
+
+class Registry:
+    def __init__(self, xml_source):
+        """
+        Initialize object.
+        :param str xml_source: File path to xml based registry file
+        """
+        if not os.path.isfile(xml_source):
+            raise Exception('Could not find registry xml: {}'.format(xml_source))
+
+        self.routines = {}
+        logger.info('Loading Registry File: %s', xml_source)
+        root = ET.parse(xml_source).getroot()
+
+        for definition in root: # Create Routines
+            logger.debug('Loading Routine: %s', definition.attrib.get('name'))
+            self.add_routine(Routine(**definition.attrib))
+
+        for definition in root: # Add dependencies
+            successor = definition.attrib.get('name')
+            for dependency in definition.iter('dependency'):
+                predecessor = dependency.attrib.get('name')
+                logger.debug('Creating dependency: %s depends on %s', successor, predecessor)
+                self.add_dependency(predecessor, successor)
+
+        logger.info('Loading Registry File: Finished')
+
+    def __iter__(self):
+        """
+        Make the registry iterable.
+        :return: iterable
+        """
+        return iter(self.routines.items())
+
+    def get_routine(self, routine_name):
+        """Retrieve routine object by name"""
+        return self.routines[routine_name]
+
+    def add_routine(self, routine):
+        """Add a routine object to the registry"""
+        new_routine_name = routine.name
+        if self.routines.get(new_routine_name):
+            raise Exception('Name conflict: %s already exists in registry.' % new_routine_name)
+        self.routines[new_routine_name] = routine
+
+    def add_dependency(self, predecessor_name, successor_name):
+        """Register a dependency between two routines"""
+        self.routines[successor_name].depends_on(self.routines[predecessor_name])
