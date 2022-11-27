@@ -1,5 +1,6 @@
 # scheduler
-A cron-like task scheduler incorporating task-to-task dependencies.
+A cron-like task scheduler incorporating task-to-task dependencies.  This is a pure python task scheduler, meaning, that
+any and all tasks managed by this program are ultimately in the form of an executable python file.
 
 ## QUICK USE
 ### Launch new scheduler
@@ -31,6 +32,7 @@ start scheduler.py start --scheduler_name [NAME] --config_file [PATH] --mode pro
    
 ## PROGRAM STRUCTURE
 scheduler.py: Command Line Interface
+
     * Instructions: Start, Stop, Status, Execute, Cancel
 
 instance/:
@@ -38,12 +40,14 @@ instance/:
     in this folder.  It prevents new instances of the same scheduler to be run simultaneously and
     allows the command line program to determine what port each running scheduler is listening to.
 
+
 ## OBJECT MODEL
+Routine: An object representing a recurring task.  Each instance has a name, a script to run, a schedule to adhere to,
+and a set of routines it depends on (that is, they must complete before this Routine can run) and set of Routines that
+depend on it (that is, they are waiting for this Routine to finish before running).
 
-REGISTRY
-    ROUTINES >> TASK (Can be thought of like an instance of routine)
-        SCHEDULE (CRON)
-        SCRIPT
+Task: This is effectively an instance of a Routine.  Where a Routine has a schedule, a task is a specific instance.
+For example, if you have a Routine that has a monthly schedule, an example of a Task would be the October instance of
+that Routine.
 
-TASK MANAGER
-    TASKS
+Registry: The registry object is a dictionary of all the Routines.

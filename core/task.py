@@ -10,20 +10,25 @@ from core.message import Message
 logger = logging.getLogger(__name__)
 
 
+def qualified_task_name(task_name, time):
+    time_str = time.strftime(config.dt_format_str)
+    return '.'.join([task_name, time_str])
+
+
 class Task(Process):
     def __init__(self, name, script, time, dependencies={}, queue=None):
         """
-        Initialize object.
-        :param str name: Routine name
-        :param str script: Full path to python script to run
-        :param datetime time: The time that the task is supposed to run at
-        :param dict dependencies: A dictionary of dependencies keys are qualified names, values are state information
-        :param queue queue: A queue object
+        Args:
+            name (str): Routine name
+            script (str): Full path to python executable
+            time (datetime): The time at which the task is supposed to run
+            dependencies (dict): A dictionary of dependencies. Keys are qualified names, values are state information
+            queue (Queue): A queue object. Used to communicate results.
         """
         super().__init__(name=name)
         self.script = script
         self.time = time
-        self.qualified_name = '.'.join([self.name, self.get_time_str()])
+        self.qualified_name = qualified_task_name(self.name, self.time)
         self.dependencies = dependencies
         self.result_queue = queue
         self.state = 'Waiting' if self.dependencies else 'Ready'
@@ -34,7 +39,7 @@ class Task(Process):
         if not os.path.exists(routine_directory):
             os.makedirs(routine_directory)
         # Standard time format uses :, but that cannot be used in a file name so replace.
-        log_file_name = '.'.join([self.name, self.get_time_str().replace(':','-'), 'log'])
+        log_file_name = '.'.join([self.qualified_name.replace(':', '-'), 'log'])
         self.log = os.path.join(routine_directory, log_file_name)
 
     def __lt__(self, other):
@@ -45,14 +50,12 @@ class Task(Process):
         """Order tasks based on time parameter"""
         return self.time > other.time
 
-    def get_time_str(self):
-        """Returns task time in standard string format"""
-        return self.time.strftime(config.dt_format_str)
-
     def update_state(self, new_state):
         """
         Update internal task state and send a message to the queue with this update
-        :param str new_state: The new state
+
+        Args:
+            new_state (str): The new state
         """
         self.state = new_state
         if self.result_queue:
@@ -61,27 +64,28 @@ class Task(Process):
     def send_message(self, state):
         """
         Create new state message and put into queue
-        :param str state: the new state
+
+        Args:
+            state (str): the new state
         """
-        if self.result_queue:
-            m = Message(name=self.name, time=self.time, qualified_name=self.qualified_name,
-                        state=state, time_stamp=datetime.today())
-            self.result_queue.put(m)
+        m = Message(name=self.name, time=self.time, qualified_name=self.qualified_name,
+                    state=state, time_stamp=datetime.today())
+        self.result_queue.put(m)
 
     def update_dependency_state(self, qualified_name, new_state):
         """
         Update the state of one of the tasks this task waits on.  Then check whether that update implies any action
         for this task.
-        :param str qualified_name: The dependency qualified name
-        :param str new_state: The new state of the dependency
+
+        Args:
+            qualified_name (str): The dependency qualified name
+            new_state (str): The new state of the dependency
         """
-        self.dependencies[qualified_name] = new_state  # Update the state information
+        # Update dependency state information
+        self.dependencies[qualified_name] = new_state
         # If all dependencies are now successful, this task is ready to be executed.
         if all([dep_state == 'Success' for dep_state in self.dependencies.values()]):
             self.update_state('Ready')
-        # If the new state is cancelled, cancel this task
-        elif new_state == 'Cancelled':
-            self.update_state('Cancelled')
 
     def run(self):
         """
@@ -92,15 +96,16 @@ class Task(Process):
         logging.basicConfig(filename=self.log, level=logging.DEBUG,
                             format='%(asctime)s | %(name)s | %(levelname)s | %(message)s',
                             datefmt=config.dt_format_str)
-        logger = logging.getLogger(__name__)
+        task_logger = logging.getLogger(__name__)
 
-        logger.info('Running %s', self.qualified_name)
+        task_logger.info('Running %s', self.qualified_name)
         try:
             exec(open(self.script).read())
             result = 'Success'
-            logger.info('Success')
+            task_logger.info('Success')
         except Exception as e:
             result = 'Failure'
-            logger.exception('Encountered an error running: ' + self.script)
+            task_logger.exception('Encountered an error running: ' + self.script)
+            task_logger.exception(e)
         # Send the result to the queue for processing by the main program
         self.update_state(result)

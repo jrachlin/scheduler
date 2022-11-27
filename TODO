@@ -1,6 +1,6 @@
 MUST HAVE:
-*. Do CANCEL function: propagate cancel or accept. Timeout?
 *. Limit to N processes
+*. Add test_task.py
 
 NICE TO HAVE:
 *. Add advanced schedule (cron) syntax (e.g. every 5 minutes)
