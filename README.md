@@ -1,5 +1,5 @@
 # scheduler
-A cron-like task scheduler incorporating task-to-task dependencies
+A cron-like task scheduler incorporating task-to-task dependencies.
 
 ## QUICK USE
 ### Launch new scheduler
